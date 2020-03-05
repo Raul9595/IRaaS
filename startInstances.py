@@ -63,7 +63,7 @@ def create_instances():
             ec2 = boto3.client('ec2', region_name=ec2_config['region'])
 
             result = launch_instance(ec2, ec2_config)
-            # Print the location of the file in the bucket for the message
+            # Print the location of the file in the bucket from the message
             print(message_body[0].get('Records')[0].get('s3').get('object').get('key'))
             print('Launched EC2 instance - '.format(result[0]))
             queue.delete_messages(Entries=delete_messages)
