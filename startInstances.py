@@ -137,9 +137,11 @@ def create_instances(ec2, ec2_config):
                 print (instance, instance.id , instance.public_dns_name)
                 thread[i] = threading.Thread(target=thread_work, args=(i , instance.id,))
                 thread[i].start()
-                i= i+1   
+                i= i+1
+                print(i)
                 if (i==len(delete_messages)):
                    break
+            queue.delete_messages(Entries=delete_messages)   
             
 
 def get_config_from_file():
