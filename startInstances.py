@@ -91,10 +91,8 @@ def start_instances(ec2_client, sqs_messages):
 def delete_messages_from_sqs_queue(message):
     # Delete messages from queue
     sqs = boto3.resource('sqs')
-    queue_name = 'ImageRec'
     print(message)
-    queue = sqs.get_queue_by_name(QueueName=queue_name)
-    queue.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message.get('ReceiptHandle'))
+    sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message.get('ReceiptHandle'))
 
 
 def get_messages_from_sqs_queue(delete_messages):
@@ -105,7 +103,8 @@ def get_messages_from_sqs_queue(delete_messages):
 
     queue = sqs.get_queue_by_name(QueueName=queue_name)
 
-    for message in queue.receive_messages(MaxNumberOfMessages=max_queue_messages, VisibilityTimeout=180):
+    # If wanted, set VisibilityTimeout=180
+    for message in queue.receive_messages(MaxNumberOfMessages=max_queue_messages):
         body = json.loads(message.body)
         # Get the message only if the message is created by the s3 instance
         if body.get('Records')[0].get('eventSource') == 'aws:s3':
@@ -153,7 +152,7 @@ def thread_work(ec2_client, tid, instance_id, sqs_message):
         x = line.decode()
         print(x)
 
-    if len(stderr) == 0:
+    if len(stdout.read().splitlines()) == 0:
         delete_messages_from_sqs_queue(sqs_message)
 
     ssh.close()
