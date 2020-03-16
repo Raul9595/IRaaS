@@ -1,0 +1,4 @@
+Xvfb :1 & export DISPLAY=:1; 
+cd /home/ubuntu/darknet; 
+pwd; 
+./darknet detector demo cfg/coco.data cfg/yolov3-tiny.cfg yolov3-tiny.weights video12.h264 > output.txt;

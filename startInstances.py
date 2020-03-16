@@ -4,9 +4,14 @@ from botocore.exceptions import ClientError
 from utils import read_file
 import paramiko
 import threading
+import os.path
+import sys
 
 BUCKET_NAME = "image-rec-512"
-CONFIG_FILE_KEY = "config/config.json"
+CONFIG_S3_FILE_KEY = "config/config.json"
+CONFIG_LOCAL_FILE_KEY = "./config/config.json"
+COMMANDS_S3_FILE_KEY = "config/commands.txt"
+COMMANDS_LOCAL_FILE_KEY = "config/commands.txt"
 BUCKET_INPUT_DIR = "input"
 BUCKET_OUTPUT_DIR = "output"
 
@@ -76,6 +81,12 @@ def start_instances(ec2_client, sqs_messages):
         if i == len(sqs_messages):
             break
 
+    for j in range(len(sqs_messages)):
+        if i != 0:
+            thread[j].join()
+            print('Stopping instance')
+            stop_instance(ec2_client, instance_thread_link[j])
+
     for i in range(len(sqs_messages)):
         sqs_messages_delete.append(
             {item: sqs_messages[i][item] for item in sqs_messages[i] if not item.startswith('Body')})
@@ -132,8 +143,8 @@ def thread_work(ec2_client, tid, instance_id):
     ssh.connect(hostname=current_instance[0].public_ip_address,
                 username='ubuntu', pkey=privkey)
 
-    stdin, stdout, stderr = ssh.exec_command(
-        'Xvfb :1 & export DISPLAY=:1; cd /home/ubuntu/darknet; pwd; ./darknet detector demo cfg/coco.data cfg/yolov3-tiny.cfg yolov3-tiny.weights video12.h264 > output.txt;')
+    commands = get_from_local('commands')
+    stdin, stdout, stderr = ssh.exec_command(commands)
     data = stdout.read().splitlines()
     print(data)
     for line in data:
@@ -159,19 +170,30 @@ def check_queue_and_launch_instances(ec2_client, ec2_config):
             start_instances(ec2_client, delete_messages)
 
 
-def get_config_from_file():
+def get_from_local(file):
     # Load config from local file
-    return json.loads(read_file('./config/config.json'))
+    if file == 'config':
+        return json.loads(read_file(CONFIG_LOCAL_FILE_KEY))
+    elif file == 'commands':
+        my_path = os.path.dirname(sys.argv[0])
+        path = os.path.join(my_path, COMMANDS_LOCAL_FILE_KEY)
+        print(path)
+        file = open(path)
+        return file.read()
 
 
-def get_config_from_s3():
+def get_from_s3(file):
     # Load config from S3
     s3 = boto3.client('s3')
-    result = s3.get_object(Bucket=BUCKET_NAME, Key=CONFIG_FILE_KEY)
-    return json.loads(result["Body"].read().decode())
+    if file == 'config':
+        result = s3.get_object(Bucket=BUCKET_NAME, Key=CONFIG_S3_FILE_KEY)
+        return json.loads(result["Body"].read().decode())
+    elif file == 'commands':
+        result = s3.get_object(Bucket=BUCKET_NAME, Key=COMMANDS_S3_FILE_KEY)
+        return result
 
 
 if __name__ == '__main__':
-    ec2_config = get_config_from_file()
+    ec2_config = get_from_local('config')
     ec2_client = boto3.client('ec2', region_name=ec2_config['region'])
     check_queue_and_launch_instances(ec2_client, ec2_config)
