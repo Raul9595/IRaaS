@@ -87,19 +87,14 @@ def start_instances(ec2_client, sqs_messages):
             print('Stopping instance')
             stop_instance(ec2_client, instance_thread_link[j])
 
-    """for i in range(len(sqs_messages)):
-        sqs_messages_delete.append(
-            {item: sqs_messages[i][item] for item in sqs_messages[i] if not item.startswith('Body')})
-        delete_messages_from_sqs_queue(sqs_messages_delete)"""
 
-
-def delete_messages_from_sqs_queue(messages):
+def delete_messages_from_sqs_queue(message):
     # Delete messages from queue
     sqs = boto3.resource('sqs')
     queue_name = 'ImageRec'
-    print(messages)
+    print(message)
     queue = sqs.get_queue_by_name(QueueName=queue_name)
-    queue.delete_messages(Entries=messages)
+    queue.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message.get('ReceiptHandle'))
 
 
 def get_messages_from_sqs_queue(delete_messages):
@@ -157,6 +152,9 @@ def thread_work(ec2_client, tid, instance_id, sqs_message):
     for line in data:
         x = line.decode()
         print(x)
+
+    if len(stderr) == 0:
+        delete_messages_from_sqs_queue(sqs_message)
 
     ssh.close()
 
