@@ -1,5 +1,4 @@
-Xvfb :1 & export DISPLAY=:1;
-sudo apt install awscli;
-cd /home/ubuntu/darknet;
-./darknet detector demo cfg/coco.data cfg/yolov3-tiny.cfg yolov3-tiny.weights videoDownload > output.txt;
-aws s3 cp output.txt s3://image-rec-512/output;
+rm run.sh
+wget https://image-rec-512.s3.amazonaws.com/config/run.sh
+chmod +x run.sh
+./run.sh inputFile outputFile

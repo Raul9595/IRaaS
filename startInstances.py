@@ -61,7 +61,7 @@ def stop_instance(ec2, instance_id):
         print(e)
 
 
-def start_instances(ec2_client, sqs_messages):
+def start_instances(ec2_client, ec2_config, sqs_messages):
     # Start multiple instances depending on the number of messages in SQS queue
     ec2 = boto3.resource('ec2')
     thread = [0] * len(sqs_messages)
@@ -74,10 +74,9 @@ def start_instances(ec2_client, sqs_messages):
         print(instance, instance.id, instance.public_dns_name)
         instance_thread_link[i] = instance.id
         thread[i] = threading.Thread(
-            target=thread_work, args=(ec2_client, i, instance.id, sqs_messages[i],))
+            target=thread_work, args=(ec2_client, ec2_config, i, instance.id, sqs_messages[i],))
         thread[i].start()
         i = i + 1
-        print(i)
         if i == len(sqs_messages):
             break
 
@@ -88,40 +87,38 @@ def start_instances(ec2_client, sqs_messages):
             stop_instance(ec2_client, instance_thread_link[j])
 
 
-def delete_messages_from_sqs_queue(message):
+def delete_messages_from_sqs_queue(ec2_config, message_receipt_handle):
     # Delete messages from queue
-    sqs = boto3.resource('sqs')
-    print(message)
-    sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message.get('ReceiptHandle'))
+    sqs = boto3.client('sqs', region_name=ec2_config['region'])
+    print(message_receipt_handle)
+    resp = sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message_receipt_handle)
+    print(resp)
 
 
-def get_messages_from_sqs_queue(delete_messages):
+def get_messages_from_sqs_queue():
     # Queue instance which retrieves all the messages
     sqs = boto3.resource('sqs')
     queue_name = 'ImageRec'
-    max_queue_messages = 10
 
+    messages = []
     queue = sqs.get_queue_by_name(QueueName=queue_name)
 
     # If wanted, set VisibilityTimeout=180
-    for message in queue.receive_messages(MaxNumberOfMessages=max_queue_messages):
+    for message in queue.receive_messages(MaxNumberOfMessages=10, WaitTimeSeconds=0, VisibilityTimeout = 10):
         body = json.loads(message.body)
         # Get the message only if the message is created by the s3 instance
         if body.get('Records')[0].get('eventSource') == 'aws:s3':
-            delete_messages.append({
+            messages.append({
                 'Id': message.message_id,
                 'ReceiptHandle': message.receipt_handle,
                 'Body': body
             })
-    delete_messages = list({v['Id']: v for v in delete_messages}.values())
-    if len(delete_messages):
-        print('Returning {} message from SQS'.format(len(delete_messages)))
-    else:
-        print('Returning {} messages from SQS'.format(len(delete_messages)))
-    return delete_messages
+    #delete_messages = list({v['Id']: v for v in delete_messages}.values())
+    print('Returning {} message from SQS'.format(len(messages)))
+    return messages
 
 
-def thread_work(ec2_client, tid, instance_id, sqs_message):
+def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
     ec2 = boto3.resource('ec2')
     start_instance(ec2_client, instance_id)
     instance = ec2.Instance(id=instance_id)
@@ -139,12 +136,14 @@ def thread_work(ec2_client, tid, instance_id, sqs_message):
                 username='ubuntu', pkey=privkey)
 
     commands = get_from_local('commands')
-    commands = commands.replace("videoDownload",
-                                sqs_message['Body'].get('Records')[0].get('s3').get('object').get('key').split('/')[1])
-    commands.replace("queueURL", SQS_QUEUE_URL)
-    commands.replace("receiptHandle", sqs_message.get('ReceiptHandle'))
+
+    input_video = sqs_message['Body'].get('Records')[0].get('s3').get('object').get('key').split('/')[1]
+    receipt_handle = sqs_message.get('ReceiptHandle')
+    commands = commands.replace("inputFile", input_video)
+    commands = commands.replace("outputFile", input_video+"_output.txt")
     print('\nCommannds ')
     print(commands)
+
     stdin, stdout, stderr = ssh.exec_command(commands)
     data = stdout.read().splitlines()
     print(data)
@@ -152,26 +151,28 @@ def thread_work(ec2_client, tid, instance_id, sqs_message):
         x = line.decode()
         print(x)
 
-    if len(stdout.read().splitlines()) == 0:
-        delete_messages_from_sqs_queue(sqs_message)
+    print('error', len(stderr.read().splitlines()))
+    if len(stderr.read().splitlines()) == 0:
+        print('Deleting message from SQS queue')
+        delete_messages_from_sqs_queue(ec2_config, receipt_handle)
 
     ssh.close()
 
 
 def check_queue_and_launch_instances(ec2_client, ec2_config):
     # Get all the messages from queue and delete it once the instances are created for each message
-    delete_messages = []
+    messages = []
 
     while True:
-        delete_messages = get_messages_from_sqs_queue(delete_messages)
+        messages = get_messages_from_sqs_queue()
 
         # If there are no more messages in the queue, break
-        if len(delete_messages) == 0:
+        if len(messages) == 0:
             break
         else:
             # Launch instances for each sqs message
-            print('Starting instances as the SQS has messages')
-            start_instances(ec2_client, delete_messages)
+            print('Starting instances as the SQS has {} messages'.format(len(messages)))
+            start_instances(ec2_client, ec2_config, messages)
 
 
 def get_from_local(file):
@@ -197,7 +198,12 @@ def get_from_s3(file):
         return result
 
 
-if __name__ == '__main__':
-    ec2_config = get_from_local('config')
-    ec2_client = boto3.client('ec2', region_name=ec2_config['region'])
-    check_queue_and_launch_instances(ec2_client, ec2_config)
+ec2_config = get_from_local('config')
+ec2_client = boto3.client('ec2', region_name=ec2_config['region'])
+check_queue_and_launch_instances(ec2_client, ec2_config)
+
+# messages = get_messages_from_sqs_queue()
+# for message in messages:
+#     receipt_handle = message.get('ReceiptHandle')
+#     print(receipt_handle)
+#     delete_messages_from_sqs_queue(ec2_config, receipt_handle)
