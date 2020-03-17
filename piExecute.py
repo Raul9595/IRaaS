@@ -2,7 +2,7 @@ import boto3
 import ast
 import json
 from utils import read_file
-import paramiko
+import subprocess
 import os.path
 import sys
 
@@ -17,12 +17,16 @@ SQS_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/694968717068/ImageRec"
 
 
 def delete_message(sqs, queue_url, receipt_handle):
-    print(queue_url)
     sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=receipt_handle)
 
 
+def add_message(message):
+    sqs = boto3.resource('sqs')
+    queue = sqs.get_queue_by_name(QueueName='ImageRec')
+    response = queue.send_message(MessageBody=message['Body'])
+
+
 def process_video(message):
-    ssh = paramiko.SSHClient()
     input_video = ast.literal_eval(message['Body']).get('Records')[0].get('s3').get('object').get('key').split('/')[1]
 
     commands = get_from_local('commands')
@@ -32,14 +36,14 @@ def process_video(message):
     print('\nCommannds ')
     print(commands)
 
-    stdin, stdout, stderr = ssh.exec_command(commands)
-    data = stdout.read().splitlines()
-    print(data)
-    for line in data:
-        x = line.decode()
-        print(x)
+    try:
+        proc = subprocess.Popen(commands, stdout=subprocess.PIPE, shell=True)
+        res = proc.communicate()
+        print("error =", res[1])
 
-    ssh.close()
+    except subprocess.CalledProcessError:
+        print('Adding message back to queue')
+        add_message(message)
 
 
 def get_message(sqs):
