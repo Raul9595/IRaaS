@@ -33,11 +33,11 @@ def process_video(message):
     commands = commands.replace("inputFile", input_video)
     commands = commands.replace("outputFile", input_video + "_output.txt")
     commands = commands.replace("exType", "pi")
-    print('\nCommannds ')
+    print('\nCommands ')
     print(commands)
 
     try:
-        proc = subprocess.Popen(commands, stdout=subprocess.PIPE, shell=True)
+        proc = subprocess.Popen(commands, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         res = proc.communicate()
         print("error =", res[1])
 
