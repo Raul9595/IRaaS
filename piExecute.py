@@ -1,7 +1,5 @@
 import boto3
 import ast
-import json
-from utils import read_file
 import subprocess
 import os.path
 import sys
@@ -47,19 +45,17 @@ def process_video(message):
 
 
 def get_message(sqs):
-    response = sqs.receive_message(QueueUrl=SQS_QUEUE_URL)
+    response = sqs.receive_message(QueueUrl=SQS_QUEUE_URL, MaxNumberOfMessages=10, WaitTimeSeconds=5,
+                                   VisibilityTimeout=10)
     if 'Messages' in response.keys():
         return response['Messages'][0]
 
 
 def get_from_local(file):
     # Load config from local file
-    if file == 'config':
-        return json.loads(read_file(CONFIG_LOCAL_FILE_KEY))
-    elif file == 'commands':
+    if file == 'commands':
         my_path = os.path.dirname(sys.argv[0])
         path = os.path.join(my_path, COMMANDS_LOCAL_FILE_KEY)
-        print(path)
         file = open(path)
         return file.read()
 
@@ -67,10 +63,7 @@ def get_from_local(file):
 def get_from_s3(file):
     # Load config from S3
     s3 = boto3.client('s3')
-    if file == 'config':
-        result = s3.get_object(Bucket=BUCKET_NAME, Key=CONFIG_S3_FILE_KEY)
-        return json.loads(result["Body"].read().decode())
-    elif file == 'commands':
+    if file == 'commands':
         result = s3.get_object(Bucket=BUCKET_NAME, Key=COMMANDS_S3_FILE_KEY)
         return result
 
@@ -80,8 +73,8 @@ if __name__ == '__main__':
     try:
         while True:
             message = get_message(sqs)
-            print(message)
-            if message:
+            if message and ast.literal_eval(message['Body']).get('Records') is not None and \
+                    ast.literal_eval(message['Body']).get('Records')[0].get('eventSource') == 'aws:s3':
                 delete_message(sqs, SQS_QUEUE_URL, message['ReceiptHandle'])
                 process_video(message)
 
