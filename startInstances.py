@@ -14,7 +14,7 @@ COMMANDS_S3_FILE_KEY = "config/commands.txt"
 COMMANDS_LOCAL_FILE_KEY = "config/commands.txt"
 BUCKET_INPUT_DIR = "input"
 BUCKET_OUTPUT_DIR = "output"
-SQS_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/694968717068/ImageRec"
+SQS_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/103147106654/ImageRec"
 
 
 def launch_new_instance(ec2, config):
@@ -105,6 +105,9 @@ def get_messages_from_sqs_queue():
     # If wanted, set VisibilityTimeout=180
     for message in queue.receive_messages(MaxNumberOfMessages=10, WaitTimeSeconds=5, VisibilityTimeout = 10):
         body = json.loads(message.body)
+        
+        if(body.get('Records') == None):
+            break
         # Get the message only if the message is created by the s3 instance
         if body.get('Records')[0].get('eventSource') == 'aws:s3':
             messages[message.message_id] = {
