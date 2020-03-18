@@ -4,7 +4,7 @@
     "instance_type": "t2.micro",
     "ssh_key_name": "image_rec_auth",
     "security_group_ids": [
-        "sg-00101b70da41f61f8"
+        "sg-75163958"
     ],
     "filter_tag_key": "Purpose",
     "filter_tag_value": "Video-Processing",
