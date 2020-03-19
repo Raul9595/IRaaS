@@ -4,7 +4,9 @@ from botocore.exceptions import ClientError
 from utils import read_file
 import paramiko
 import threading
+import ast
 import os.path
+import time
 import sys
 
 BUCKET_NAME = "image-rec-512"
@@ -33,6 +35,7 @@ def stop_instance(ec2, instance_id):
         print('Stopped instance with ID:', instance_id)
     except ClientError as e:
         print(e)
+
 
 def start_instances(ec2_client, ec2_config, sqs_messages):
     # Start multiple instances depending on the number of messages in SQS queue
@@ -66,36 +69,38 @@ def delete_messages_from_sqs_queue(ec2_config, message_receipt_handle):
     print(message_receipt_handle)
     return sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message_receipt_handle)
 
+
 def add_message_to_sqs_queue(ec2_config, message):
     sqs = boto3.resource('sqs', region_name=ec2_config['region'])
     queue = sqs.get_queue_by_name(QueueName='ImageRec')
     response = queue.send_message(MessageBody=message["Body"])
     print(response)
 
+
 def get_messages_from_sqs_queue(ec2_config):
     # Queue instance which retrieves all the messages
-    sqs = boto3.resource('sqs', region_name=ec2_config['region'])
+    sqs = boto3.client('sqs', region_name=ec2_config['region'])
     queue_name = 'ImageRec'
 
-    messages = {}
-    queue = sqs.get_queue_by_name(QueueName=queue_name)
+    response = sqs.receive_message(QueueUrl=SQS_QUEUE_URL, MaxNumberOfMessages=10, WaitTimeSeconds=5,
+                                   VisibilityTimeout=10)
+    if 'Messages' in response.keys():
+        return response['Messages']
+    return []
 
-    # If wanted, set VisibilityTimeout=180
-    for message in queue.receive_messages(MaxNumberOfMessages=10, WaitTimeSeconds=5, VisibilityTimeout = 10):
-        body = json.loads(message.body)
-        
-        if(body.get('Records') == None):
-            break
-        # Get the message only if the message is created by the s3 instance
-        if body.get('Records')[0].get('eventSource') == 'aws:s3':
-            messages[message.message_id] = {
-                "Id": message.message_id,
-                "ReceiptHandle": message.receipt_handle,
-                "Body": body.replace('\'', '"')
-            }
-    #delete_messages = list({v['Id']: v for v in delete_messages}.values())
-    print('Returning {} message from SQS'.format(len(messages)))
-    return list(messages.values())
+
+def ssh_connect_with_retry(ssh, ip_address):
+    privkey = paramiko.RSAKey.from_private_key_file(
+        './config/image_rec_auth.pem')
+    interval = 5
+    try:
+        print('SSH into the instance: {}'.format(ip_address))
+        ssh.connect(hostname=ip_address,
+                    username='ubuntu', pkey=privkey)
+        return True
+    except Exception as e:
+        print(e)
+        time.sleep(interval)
 
 
 def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
@@ -109,19 +114,17 @@ def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
     print('Instance {} is now in running state'.format(instance_id))
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    privkey = paramiko.RSAKey.from_private_key_file(
-        './config/image_rec_auth.pem')
     current_instance = list(ec2.instances.filter(InstanceIds=[instance_id]))
-    print(current_instance[0].public_ip_address)
-    print('SSH into the instance')
-    ssh.connect(hostname=current_instance[0].public_ip_address,
-                username='ubuntu', pkey=privkey)
+
+    ssh_connect_with_retry(ssh, current_instance[0].public_ip_address)
 
     commands = get_from_local('commands')
 
-    input_video = sqs_message['Body'].get('Records')[0].get('s3').get('object').get('key').split('/')[1]
+    input_video = ast.literal_eval(sqs_message['Body']).get(
+        'Records')[0].get('s3').get('object').get('key').split('/')[1]
     commands = commands.replace("inputFile", input_video)
     commands = commands.replace("outputFile", input_video+"_output.txt")
+    commands = commands.replace("exType", "ec2")
     print('\nCommannds ')
     print(commands)
 
@@ -182,6 +185,11 @@ def get_from_s3(file):
 ec2_config = get_from_local('config')
 ec2_client = boto3.client('ec2', region_name=ec2_config['region'])
 
+# messages = get_messages_from_sqs_queue(ec2_config)
+# for message in messages:
+#     input_video = ast.literal_eval(message['Body']).get(
+#         'Records')[0].get('s3').get('object').get('key').split('/')[1]
+#     print(input_video)
 try:
     while True:
         try:
