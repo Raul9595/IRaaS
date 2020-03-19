@@ -185,6 +185,7 @@ try:
     while True:
         try:
             status = read_file('/home/ubuntu/pi_status.txt')
+            print('Status is {}'.format(status))
             if status == 1:
                 check_queue_and_launch_instances(ec2_client, ec2_config)
         except FileNotFoundError:
