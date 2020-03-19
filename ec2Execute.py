@@ -66,14 +66,14 @@ def delete_messages_from_sqs_queue(ec2_config, message_receipt_handle):
     print(message_receipt_handle)
     return sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message_receipt_handle)
 
-def add_message_to_sqs_queue(message):
-    sqs = boto3.resource('sqs')
+def add_message_to_sqs_queue(ec2_config, message):
+    sqs = boto3.resource('sqs', region_name=ec2_config['region'])
     queue = sqs.get_queue_by_name(QueueName='ImageRec')
     response = queue.send_message(MessageBody=message['Body'])
 
-def get_messages_from_sqs_queue():
+def get_messages_from_sqs_queue(ec2_config):
     # Queue instance which retrieves all the messages
-    sqs = boto3.resource('sqs')
+    sqs = boto3.resource('sqs', region_name=ec2_config['region'])
     queue_name = 'ImageRec'
 
     messages = {}
@@ -100,7 +100,7 @@ def get_messages_from_sqs_queue():
 def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
     receipt_handle = sqs_message.get('ReceiptHandle')
     delete_messages_from_sqs_queue(ec2_config, receipt_handle)
-    ec2 = boto3.resource('ec2')
+    ec2 = boto3.resource('ec2', region_name=ec2_config['region'])
     start_instance(ec2_client, instance_id)
     instance = ec2.Instance(id=instance_id)
     print('Waiting for instance {} come in running state'.format(instance_id))
@@ -134,7 +134,7 @@ def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
     print('error', len(stderr.read().splitlines()))
     if len(stderr.read().splitlines()) == 0:
         print('Deleting message from SQS queue')
-        add_message_to_sqs_queue(sqs_message)
+        add_message_to_sqs_queue(ec2_config, sqs_message)
 
     ssh.close()
 
@@ -144,7 +144,7 @@ def check_queue_and_launch_instances(ec2_client, ec2_config):
     messages = []
 
     while True:
-        messages = get_messages_from_sqs_queue()
+        messages = get_messages_from_sqs_queue(ec2_config)
 
         # If there are no more messages in the queue, break
         if len(messages) == 0:
@@ -186,7 +186,7 @@ try:
         try:
             status = str.strip(read_file('/home/ubuntu/pi_status.txt'))
             print('Status is {}'.format(status))
-            if status == 1:
+            if status == "1":
                 check_queue_and_launch_instances(ec2_client, ec2_config)
         except FileNotFoundError:
             print('Status file not found')
