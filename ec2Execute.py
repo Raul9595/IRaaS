@@ -184,7 +184,7 @@ ec2_client = boto3.client('ec2', region_name=ec2_config['region'])
 try:
     while True:
         try:
-            status = read_file('/home/ubuntu/pi_status.txt')
+            status = str.strip(read_file('/home/ubuntu/pi_status.txt'))
             print('Status is {}'.format(status))
             if status == 1:
                 check_queue_and_launch_instances(ec2_client, ec2_config)
