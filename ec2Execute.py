@@ -36,7 +36,7 @@ def stop_instance(ec2, instance_id):
 
 def start_instances(ec2_client, ec2_config, sqs_messages):
     # Start multiple instances depending on the number of messages in SQS queue
-    ec2 = boto3.resource('ec2')
+    ec2 = boto3.resource('ec2', region_name=ec2_config['region'])
     thread = [0] * len(sqs_messages)
     instance_thread_link = {}
 
