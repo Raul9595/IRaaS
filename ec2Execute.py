@@ -69,7 +69,8 @@ def delete_messages_from_sqs_queue(ec2_config, message_receipt_handle):
 def add_message_to_sqs_queue(ec2_config, message):
     sqs = boto3.resource('sqs', region_name=ec2_config['region'])
     queue = sqs.get_queue_by_name(QueueName='ImageRec')
-    response = queue.send_message(MessageBody=message['Body'])
+    response = queue.send_message(MessageBody=message["Body"])
+    print(response)
 
 def get_messages_from_sqs_queue(ec2_config):
     # Queue instance which retrieves all the messages
@@ -88,9 +89,9 @@ def get_messages_from_sqs_queue(ec2_config):
         # Get the message only if the message is created by the s3 instance
         if body.get('Records')[0].get('eventSource') == 'aws:s3':
             messages[message.message_id] = {
-                'Id': message.message_id,
-                'ReceiptHandle': message.receipt_handle,
-                'Body': body
+                "Id": message.message_id,
+                "ReceiptHandle": message.receipt_handle,
+                "Body": body.replace('\'', '"')
             }
     #delete_messages = list({v['Id']: v for v in delete_messages}.values())
     print('Returning {} message from SQS'.format(len(messages)))
