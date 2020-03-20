@@ -28,10 +28,9 @@ def uploadDirectory(path, s3, bucketname):
 
 
 def main():
-    print('Hello')
     s3 = boto3.resource('s3')
     s3BucketName = 'image-rec-512'
     # Local folder path
-    path = 'data'
+    path = ''
     # Upload all the files from the path
     uploadDirectory(path, s3, s3BucketName)
