@@ -27,7 +27,8 @@ def uploadDirectory(path, s3, bucketname):
         pass
 
 
-if __name__ == '__main__':
+def main():
+    print('Hello')
     s3 = boto3.resource('s3')
     s3BucketName = 'image-rec-512'
     # Local folder path

@@ -14,25 +14,28 @@ import subprocess
 import time
 import sys
 
-sensor = 12
 
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(sensor, GPIO.IN)
+def main(maxVid):
+    sensor = 12
 
-on = 0
-off = 0
-flag = 0
-max = int(sys.argv[1])
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BOARD)
+    GPIO.setup(sensor, GPIO.IN)
 
-while flag < max+1:
-    i=GPIO.input(sensor)
-    if i == 0:
-        print "No intruders"
-        time.sleep(1)
-    elif i == 1:
-        print "Intruder detected"
-        flag+=1
-        subprocess.call(['raspivid','-o','../darknet/video'+str(flag)+'.h264'])
-        time.sleep(0.1)
-        
+    on = 0
+    off = 0
+    flag = 0
+    max = maxVid
+
+    while flag < max + 1:
+        i = GPIO.input(sensor)
+        if i == 0:
+            print
+            "No intruders"
+            time.sleep(1)
+        elif i == 1:
+            print
+            "Intruder detected"
+            flag += 1
+            subprocess.call(['raspivid', '-o', '../darknet/video' + str(flag) + '.h264'])
+            time.sleep(0.1)

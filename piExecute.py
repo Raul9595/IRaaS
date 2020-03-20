@@ -113,7 +113,7 @@ def get_from_s3(file):
         return result
 
 
-if __name__ == '__main__':
+def main():
     sqs = boto3.client('sqs')
     try:
         while True:
