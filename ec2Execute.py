@@ -89,11 +89,14 @@ def get_messages_from_sqs_queue(ec2_config):
     return []
 
 
-def ssh_connect_with_retry(ssh, ip_address):
+def ssh_connect_with_retry(ssh, ip_address, retries):
+    if retries > 3:
+        return False
     privkey = paramiko.RSAKey.from_private_key_file(
         './config/image_rec_auth.pem')
     interval = 5
     try:
+        retries += 1
         print('SSH into the instance: {}'.format(ip_address))
         ssh.connect(hostname=ip_address,
                     username='ubuntu', pkey=privkey)
@@ -101,6 +104,7 @@ def ssh_connect_with_retry(ssh, ip_address):
     except Exception as e:
         print(e)
         time.sleep(interval)
+        ssh_connect_with_retry(ssh, ip_address, retries)
 
 
 def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
@@ -116,7 +120,7 @@ def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     current_instance = list(ec2.instances.filter(InstanceIds=[instance_id]))
 
-    ssh_connect_with_retry(ssh, current_instance[0].public_ip_address)
+    ssh_connect_with_retry(ssh, current_instance[0].public_ip_address, 0)
 
     commands = get_from_local('commands')
 
@@ -185,13 +189,10 @@ def get_from_s3(file):
 ec2_config = get_from_local('config')
 ec2_client = boto3.client('ec2', region_name=ec2_config['region'])
 
-# messages = get_messages_from_sqs_queue(ec2_config)
-# for message in messages:
-#     input_video = ast.literal_eval(message['Body']).get(
-#         'Records')[0].get('s3').get('object').get('key').split('/')[1]
-#     print(input_video)
 try:
     while True:
+        # run the loop every 3 seconds
+        time.sleep(3)
         try:
             status = str.strip(read_file('/home/ubuntu/pi_status.txt'))
             print('Status is {}'.format(status))
