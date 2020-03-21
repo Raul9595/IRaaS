@@ -35,6 +35,8 @@ then
 
 else
 
+    cd /home/pi/darknet;
+
     ./darknet detector demo cfg/coco.data cfg/yolov3-tiny.cfg yolov3-tiny.weights "/home/pi/iraas/data/"$1 > output.txt;
 
 fi
