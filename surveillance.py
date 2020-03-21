@@ -12,7 +12,6 @@ SETUP:
 import RPi.GPIO as GPIO
 import subprocess
 import time
-import sys
 
 
 def main(maxVid):
@@ -22,8 +21,6 @@ def main(maxVid):
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(sensor, GPIO.IN)
 
-    on = 0
-    off = 0
     flag = 0
     max = maxVid
 
@@ -35,5 +32,5 @@ def main(maxVid):
         elif i == 1:
             print("Intruder detected")
             flag += 1
-            subprocess.call(['raspivid', '-o', '../darknet/video' + str(flag) + '.h264'])
+            subprocess.call(['raspivid', '-o', '../iraas/data/video' + str(flag) + '.h264'])
             time.sleep(0.1)

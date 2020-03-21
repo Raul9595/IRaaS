@@ -23,7 +23,7 @@ if __name__ == '__main__':
     thread2 = threading.Thread(target=call_surveillance, args=[int(sys.argv[1]), ])
     thread2.start()
 
-    thread3 = threading.Thread(target=call_pushData)
+    thread3 = threading.Thread(target=call_execute)
     thread3.start()
 
     thread1.join()

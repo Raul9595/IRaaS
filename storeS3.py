@@ -7,7 +7,7 @@ def uploadDirectory(path, s3, bucketname):
         while True:
             for root, dirs, files in os.walk(path):
                 for file in files:
-                    if '.mp4' in file:
+                    if '.h264' in file:
                         put_into_bucket = True
 
                         # Check if the file exists in the bucket already
@@ -31,6 +31,6 @@ def main():
     s3 = boto3.resource('s3')
     s3BucketName = 'image-rec-512'
     # Local folder path
-    path = ''
+    path = '/home/pi/iraas/data'
     # Upload all the files from the path
     uploadDirectory(path, s3, s3BucketName)

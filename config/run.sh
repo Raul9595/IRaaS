@@ -18,17 +18,26 @@ installPackage() {
     return "$retval"
 }
 
-#Install AWS CLI if required
-installPackage awscli;
+if test "$3" != "pi";
+then
+    #Install AWS CLI if required
+    installPackage awscli;
 
-#Copy Input file to EC2
-aws s3 cp s3://image-rec-512/input/$1 /home/ubuntu/darknet;
+    #Copy Input file to EC2
+    aws s3 cp s3://image-rec-512/input/$1 /home/ubuntu/darknet;
 
-# Run YOLO
-Xvfb :1 & export DISPLAY=:1
+    # Run YOLO
+    Xvfb :1 & export DISPLAY=:1;
 
-cd /home/ubuntu/darknet;
-./darknet detector demo cfg/coco.data cfg/yolov3-tiny.cfg yolov3-tiny.weights $1 > output.txt;
+    cd /home/ubuntu/darknet;
+
+    ./darknet detector demo cfg/coco.data cfg/yolov3-tiny.cfg yolov3-tiny.weights $1 > output.txt;
+
+else
+
+    ./darknet detector demo cfg/coco.data cfg/yolov3-tiny.cfg yolov3-tiny.weights "/home/pi/iraas/data/"$1 > output.txt;
+
+fi
 
 # Copy output file to S3
 aws s3 cp output.txt s3://image-rec-512/output/$2;
