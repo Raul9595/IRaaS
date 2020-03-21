@@ -62,5 +62,9 @@ def clearOutputS3():
     result = bucket.delete_keys([key.name for key in bucketListResultSet])
 
 #create_new_instances(10)
-stop_all_instances()
+#stop_all_instances()
+clearInputS3()
+clearOutputS3()
+
+
 
