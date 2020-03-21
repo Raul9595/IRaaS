@@ -1,10 +1,12 @@
 import boto3
 import os
+import time
 
 
 def uploadDirectory(path, s3, bucketname):
     try:
         while True:
+            time.sleep(3)
             for root, dirs, files in os.walk(path):
                 for file in files:
                     if '.h264' in file:

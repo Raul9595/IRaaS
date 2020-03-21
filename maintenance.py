@@ -49,6 +49,18 @@ def stop_all_instances():
     for instance in instances:
         stop_instance(ec2_client, instance.instance_id)
 
+def clearInputS3():
+    s3 = boto.connect_s3()
+    bucket = s3.get_bucket("image-rec-512")
+    bucketListResultSet = bucket.list(prefix="input/")
+    result = bucket.delete_keys([key.name for key in bucketListResultSet])
+
+def clearOutputS3():
+    s3 = boto.connect_s3()
+    bucket = s3.get_bucket("image-rec-512")
+    bucketListResultSet = bucket.list(prefix="output/")
+    result = bucket.delete_keys([key.name for key in bucketListResultSet])
+
 #create_new_instances(10)
 stop_all_instances()
 

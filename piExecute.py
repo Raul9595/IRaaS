@@ -5,6 +5,7 @@ import os.path
 import sys
 import paramiko
 import json
+import time
 
 BUCKET_NAME = "image-rec-512"
 CONFIG_S3_FILE_KEY = "config/config.json"
@@ -117,6 +118,7 @@ def main():
     sqs = boto3.client('sqs')
     try:
         while True:
+            time.sleep(3)
             message = get_message(sqs)
             if message and ast.literal_eval(message['Body']).get('Records') is not None and \
                     ast.literal_eval(message['Body']).get('Records')[0].get('eventSource') == 'aws:s3':

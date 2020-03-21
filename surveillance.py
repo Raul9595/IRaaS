@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import time
+
 '''
 SETUP:
 
@@ -25,6 +27,7 @@ def main(maxVid):
     max = maxVid
 
     while flag < max + 1:
+        time.sleep(3)
         i = GPIO.input(sensor)
         if i == 0:
             print("No intruders")

@@ -18,6 +18,8 @@ installPackage() {
     return "$retval"
 }
 
+Xvfb :1 & export DISPLAY=:1;
+
 if test "$3" != "pi";
 then
     #Install AWS CLI if required
@@ -27,13 +29,13 @@ then
     aws s3 cp s3://image-rec-512/input/$1 /home/ubuntu/darknet;
 
     # Run YOLO
-    Xvfb :1 & export DISPLAY=:1;
 
     cd /home/ubuntu/darknet;
 
     ./darknet detector demo cfg/coco.data cfg/yolov3-tiny.cfg yolov3-tiny.weights $1 > output.txt;
 
 else
+    export PATH=~/.local/bin:$PATH
 
     cd /home/pi/darknet;
 
