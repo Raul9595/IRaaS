@@ -77,6 +77,15 @@ def add_message_to_sqs_queue(ec2_config, message):
     print(response)
 
 
+def file_exists_in_bucket(file_name):
+    s3 = boto3.resource('s3')
+    s3BucketName = 'image-rec-512'
+    for my_bucket_object in s3.Bucket(s3BucketName).objects.filter(Prefix='output/'):
+        if file_name in my_bucket_object.key:
+            return True
+    return False
+
+
 def get_messages_from_sqs_queue(ec2_config):
     # Queue instance which retrieves all the messages
     sqs = boto3.client('sqs', region_name=ec2_config['region'])
@@ -104,12 +113,22 @@ def ssh_connect_with_retry(ssh, ip_address, retries):
     except Exception as e:
         print(e)
         time.sleep(interval)
+        print('Retrying SSH connection to {}'.format(ip_address))
         ssh_connect_with_retry(ssh, ip_address, retries)
 
 
 def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
     receipt_handle = sqs_message.get('ReceiptHandle')
     delete_messages_from_sqs_queue(ec2_config, receipt_handle)
+
+    input_video = ast.literal_eval(sqs_message['Body']).get(
+        'Records')[0].get('s3').get('object').get('key').split('/')[1]
+    output_file_name = input_video + "_output.txt"
+
+    if file_exists_in_bucket(output_file_name):
+        print('Skipping processing of video as output file with this name already exists')
+        return
+
     ec2 = boto3.resource('ec2', region_name=ec2_config['region'])
     start_instance(ec2_client, instance_id)
     instance = ec2.Instance(id=instance_id)
@@ -124,25 +143,20 @@ def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
 
     commands = get_from_local('commands')
 
-    input_video = ast.literal_eval(sqs_message['Body']).get(
-        'Records')[0].get('s3').get('object').get('key').split('/')[1]
     commands = commands.replace("inputFile", input_video)
-    commands = commands.replace("outputFile", input_video+"_output.txt")
+    commands = commands.replace("outputFile", output_file_name)
     commands = commands.replace("exType", "ec2")
-    print('\nCommannds ')
-    print(commands)
+    print('\nCommannds ', commands)
 
     stdin, stdout, stderr = ssh.exec_command(commands)
-    data = stdout.read().splitlines()
-    print(data)
-    for line in data:
-        x = line.decode()
-        print(x)
+    print('stdout:', stdout.read())
+    print('stderr:', stderr.read())
 
-    print('error', len(stderr.read().splitlines()))
-    if len(stderr.read().splitlines()) == 0:
-        print('Deleting message from SQS queue')
+    if not file_exists_in_bucket(output_file_name):
+        print('Adding message back to SQS as processing failed for video {}'.format(
+            input_video))
         add_message_to_sqs_queue(ec2_config, sqs_message)
+        return
 
     ssh.close()
 
@@ -173,18 +187,6 @@ def get_from_local(file):
         print(path)
         file = open(path)
         return file.read()
-
-
-def get_from_s3(file):
-    # Load config from S3
-    s3 = boto3.client('s3')
-    if file == 'config':
-        result = s3.get_object(Bucket=BUCKET_NAME, Key=CONFIG_S3_FILE_KEY)
-        return json.loads(result["Body"].read().decode())
-    elif file == 'commands':
-        result = s3.get_object(Bucket=BUCKET_NAME, Key=COMMANDS_S3_FILE_KEY)
-        return result
-
 
 ec2_config = get_from_local('config')
 ec2_client = boto3.client('ec2', region_name=ec2_config['region'])
