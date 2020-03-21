@@ -74,12 +74,12 @@ def process_video(message):
         res = proc.communicate()
 
         if res[1] is not None:
-            print('Adding message back to queue')
+            print('Adding message back to queue as res[1] is not None', res[1])
             add_message(message)
         connect_to_instance('i-01b3d9f2d287a0a1c', 0)
 
-    except subprocess.CalledProcessError:
-        print('Adding message back to queue')
+    except subprocess.CalledProcessError as e:
+        print('Adding message back to queue due to process error', e)
         add_message(message)
         connect_to_instance('i-01b3d9f2d287a0a1c', 0)
 
