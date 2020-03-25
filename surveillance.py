@@ -28,7 +28,7 @@ def main(maxVid):
     max = maxVid
 
     while flag < max + 1:
-        time.sleep(3)
+        time.sleep(0.5)
         i = GPIO.input(sensor)
         if i == 0:
             print("No intruders")
