@@ -1,8 +1,5 @@
 #!/usr/bin/python
 
-import storeS3
-import os
-
 '''
 SETUP:
 
@@ -15,6 +12,7 @@ SETUP:
 import RPi.GPIO as GPIO
 import subprocess
 import time
+import storeS3
 
 
 def main(maxVid):
@@ -36,7 +34,6 @@ def main(maxVid):
         elif i == 1:
             print("Intruder detected")
             flag += 1
-            subprocess.call(['sudo', 'cpulimit', '--pid', str(os.getpid()), '--limit', '20'])
-            proc = subprocess.Popen(['raspivid', '-o', '../iraas/data/video' + str(flag) + '.h264'], stdout=subprocess.PIPE)
-            subprocess.call(['sudo', 'cpulimit', '--pid', str(proc.pid), '--limit', '20'])
+            subprocess.call(['raspivid', '-o', '../iraas/data/video' + str(flag) + '.h264'])
+            time.sleep(5)
             storeS3.main()
