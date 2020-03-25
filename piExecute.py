@@ -123,7 +123,7 @@ def main():
             message = get_message(sqs)
             if message and ast.literal_eval(message['Body']).get('Records') is not None and \
                     ast.literal_eval(message['Body']).get('Records')[0].get('eventSource') == 'aws:s3':
-                # delete_message(sqs, SQS_QUEUE_URL, message['ReceiptHandle'])
+                delete_message(sqs, SQS_QUEUE_URL, message['ReceiptHandle'])
                 process_video(message)
 
     except KeyboardInterrupt:
