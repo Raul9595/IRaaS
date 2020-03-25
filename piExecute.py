@@ -67,11 +67,13 @@ def process_video(message):
     commands = commands.replace("inputFile", input_video)
     commands = commands.replace("outputFile", input_video + "_output.txt")
     commands = commands.replace("exType", "pi")
+    commands = commands.replace("processId", str(os.getpid()))
     print('\nCommands ')
     print(commands)
 
     try:
         proc = subprocess.Popen(commands, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        subprocess.call(['sudo', 'cpulimit', '--pid', str(proc.pid), '--limit', '40'])
         res = proc.communicate()
 
         if res[1] is not None:
@@ -117,6 +119,7 @@ def get_from_s3(file):
 def main():
     sqs = boto3.client('sqs')
     try:
+        os.nice(19)
         while True:
             time.sleep(3)
             message = get_message(sqs)
