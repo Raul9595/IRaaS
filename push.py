@@ -5,6 +5,7 @@ import sys
 
 BUCKET_NAME = "image-rec-512"
 
+
 def push_output():
     s3 = boto3.client('s3')
     lst = ["zebra", "wine glass", "vase", "umbrella", "tv", "truck", "train", "traffic light", "toothbrush", "toilet",
@@ -17,21 +18,22 @@ def push_output():
            "boat", "bird", "bicycle", "bench", "bed", "bear", "baseball glove", "baseball bat", "banana", "backpack",
            "apple", "airplane"]
 
-    print(sys.argv[1])
-    items_found = set()
+    items_found = []
 
     for item in lst:
-        with open('/home/ubuntu/darknet/output.txt') as f:
+        with open('output.txt') as f:
             for line in f:
-                if re.search("\b{0}\b".format(item), line):
-                    items_found.add(items_found)
+                if re.search("{0}".format(item+":"), line):
+                    print(line)
+                    items_found.append(item)
+
+    mylist = list(set(items_found))
 
     if len(items_found) == 0:
-        items_found.add("No object detected")
+        items_found.append("No object detected")
 
-    items_list = list(items_found)
-
-    s3.put_object(Bucket=BUCKET_NAME, Key=sys.argv[1],
-                  Body=json.dumps(items_list))
+    f = open("output_processed.txt", "w")
+    f.write(json.dumps(mylist))
+    f.close()
 
 push_output()
