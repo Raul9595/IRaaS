@@ -79,10 +79,10 @@ def push_output(input_video):
                 if re.search("{0}".format(item + ":"), line):
                     items_found.append(item)
 
-    mylist = list(set(items_found))
-
     if len(items_found) == 0:
         items_found.append("No object detected")
+    S
+    mylist = list(set(items_found))
 
     s3.put_object(Bucket=BUCKET_NAME, Key="output/" + input_video, Body=json.dumps(mylist))
 
