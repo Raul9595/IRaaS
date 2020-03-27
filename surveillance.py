@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-import time
-
 '''
 SETUP:
 
@@ -14,6 +12,7 @@ SETUP:
 import RPi.GPIO as GPIO
 import subprocess
 import time
+import storeS3
 
 
 def main(maxVid):
@@ -27,7 +26,7 @@ def main(maxVid):
     max = maxVid
 
     while flag < max + 1:
-        time.sleep(3)
+        time.sleep(0.5)
         i = GPIO.input(sensor)
         if i == 0:
             print("No intruders")
@@ -36,4 +35,5 @@ def main(maxVid):
             print("Intruder detected")
             flag += 1
             subprocess.call(['raspivid', '-o', '../iraas/data/video' + str(flag) + '.h264'])
-            time.sleep(0.1)
+            time.sleep(5)
+            storeS3.main()

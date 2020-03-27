@@ -117,12 +117,13 @@ def get_from_s3(file):
 def main():
     sqs = boto3.client('sqs')
     try:
+        os.nice(19)
         while True:
             time.sleep(3)
             message = get_message(sqs)
             if message and ast.literal_eval(message['Body']).get('Records') is not None and \
                     ast.literal_eval(message['Body']).get('Records')[0].get('eventSource') == 'aws:s3':
-                # delete_message(sqs, SQS_QUEUE_URL, message['ReceiptHandle'])
+                delete_message(sqs, SQS_QUEUE_URL, message['ReceiptHandle'])
                 process_video(message)
 
     except KeyboardInterrupt:
