@@ -25,15 +25,13 @@ def main(maxVid):
     flag = 0
     max = maxVid
 
-    while flag < max + 1:
+    while flag < max:
         time.sleep(0.5)
         i = GPIO.input(sensor)
         if i == 0:
             print("No intruders")
-            time.sleep(1)
         elif i == 1:
             print("Intruder detected")
             flag += 1
             subprocess.call(['raspivid', '-o', '../iraas/data/video' + str(flag) + '.h264'])
-            time.sleep(5)
             storeS3.main()
