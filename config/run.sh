@@ -34,4 +34,6 @@ cd /home/ubuntu/darknet;
 rm push.py
 wget https://image-rec-512.s3.amazonaws.com/config/push.py;
 
-python3 push.py inputFile
+python3 push.py
+
+aws s3 cp /home/ubuntu/darknet/output_processed.txt s3://image-rec-512/output/$1;
