@@ -1,4 +1,2 @@
-rm run.sh;
-wget https://image-rec-512.s3.amazonaws.com/config/run.sh;
 chmod +x run.sh;
 ./run.sh inputFile;
