@@ -116,33 +116,6 @@ def ssh_connect_with_retry(ssh, ip_address, retries):
         print('Retrying SSH connection to {}'.format(ip_address))
         ssh_connect_with_retry(ssh, ip_address, retries)
 
-def push_output(input_video):
-    s3 = boto3.client('s3')
-    lst = ["zebra", "wine glass", "vase", "umbrella", "tv", "truck", "train", "traffic light", "toothbrush", "toilet",
-           "toaster", "tie", "tennis racket", "teddy bear", "surfboard", "suitcase", "stop sign", "sports ball",
-           "spoon", "snowboard", "skis", "skateboard", "sink", "sheep", "scissors", "sandwich", "remote",
-           "refrigerator", "potted plant", "pizza", "person", "parking meter", "oven", "orange", "mouse", "motorcycle",
-           "microwave", "laptop", "knife", "kite", "keyboard", "hot dog", "horse", "handbag", "hair drier", "giraffe",
-           "frisbee", "fork", "fire hydrant", "elephant", "donut", "dog", "dining table", "cup", "cow", "couch",
-           "clock", "chair", "cell phone", "cat", "carrot", "car", "cake", "bus", "broccoli", "bowl", "bottle", "book",
-           "boat", "bird", "bicycle", "bench", "bed", "bear", "baseball glove", "baseball bat", "banana", "backpack",
-           "apple", "airplane"]
-
-    items_found = set()
-
-    for item in lst:
-        with open('/home/ubuntu/darknet/output.txt') as f:
-            for line in f:
-                if re.search("\b{0}\b".format(item), line):
-                    items_found.add(items_found)
-
-    if len(items_found) == 0:
-        items_found.add("No object detected")
-
-    items_list = list(items_found)
-
-    s3.put_object(Bucket=BUCKET_NAME, Key=input_video, Body=json.dumps(items_list))
-
 def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
     receipt_handle = sqs_message.get('ReceiptHandle')
     delete_messages_from_sqs_queue(ec2_config, receipt_handle)
@@ -170,13 +143,12 @@ def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
     commands = get_from_local('commands')
 
     commands = commands.replace("inputFile", input_video)
-    
+
     print('\nCommannds ', commands)
 
     stdin, stdout, stderr = ssh.exec_command(commands)
     print('stdout:', stdout.read())
     print('stderr:', stderr.read())
-    push_output(input_video)
 
     if not file_exists_in_bucket(output_file_name):
         print('Adding message back to SQS as processing failed for video {}'.format(
