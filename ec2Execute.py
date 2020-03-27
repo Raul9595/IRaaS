@@ -170,6 +170,7 @@ def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
     commands = get_from_local('commands')
 
     commands = commands.replace("inputFile", input_video)
+    
     print('\nCommannds ', commands)
 
     stdin, stdout, stderr = ssh.exec_command(commands)
