@@ -1,5 +1,4 @@
 import json
-import boto3
 import re
 import sys
 
@@ -7,7 +6,6 @@ BUCKET_NAME = "image-rec-512"
 
 
 def push_output():
-    s3 = boto3.client('s3')
     lst = ["zebra", "wine glass", "vase", "umbrella", "tv", "truck", "train", "traffic light", "toothbrush", "toilet",
            "toaster", "tie", "tennis racket", "teddy bear", "surfboard", "suitcase", "stop sign", "sports ball",
            "spoon", "snowboard", "skis", "skateboard", "sink", "sheep", "scissors", "sandwich", "remote",
