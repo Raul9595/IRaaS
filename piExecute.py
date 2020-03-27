@@ -74,7 +74,7 @@ def push_output(input_video):
     items_found = set()
 
     for item in lst:
-        with open('output.txt') as f:
+        with open('/home/pi/darknet/output.txt') as f:
             for line in f:
                 if re.search("\b{0}\b".format(item), line):
                     items_found.add(items_found)
