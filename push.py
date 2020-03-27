@@ -25,10 +25,10 @@ def push_output():
                     print(line)
                     items_found.append(item)
 
-    mylist = list(set(items_found))
-
     if len(items_found) == 0:
         items_found.append("No object detected")
+        
+    mylist = list(set(items_found))
 
     f = open("/home/ubuntu/darknet/output_processed.txt", "w")
     f.write(json.dumps(mylist))
