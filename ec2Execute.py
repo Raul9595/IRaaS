@@ -156,6 +156,7 @@ def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
         add_message_to_sqs_queue(ec2_config, sqs_message)
         return
     else:
+        print('Stop instance with id {}'.format(instance_id))
         stop_instance(ec2_client, instance_id)
 
     ssh.close()
