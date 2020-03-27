@@ -6,8 +6,27 @@ import paramiko
 import threading
 import os.path
 import sys
+#from ec2Execute import get_from_local
 
-from startInstances import *;
+BUCKET_NAME = "image-rec-512"
+CONFIG_S3_FILE_KEY = "config/config.json"
+CONFIG_LOCAL_FILE_KEY = "./config/config.json"
+COMMANDS_S3_FILE_KEY = "config/commands.txt"
+COMMANDS_LOCAL_FILE_KEY = "config/commands.txt"
+BUCKET_INPUT_DIR = "input"
+BUCKET_OUTPUT_DIR = "output"
+SQS_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/103147106654/ImageRec"
+
+def get_from_local(file):
+    # Load config from local file
+    if file == 'config':
+        return json.loads(read_file(CONFIG_LOCAL_FILE_KEY))
+    elif file == 'commands':
+        my_path = os.path.dirname(sys.argv[0])
+        path = os.path.join(my_path, COMMANDS_LOCAL_FILE_KEY)
+        print(path)
+        file = open(path)
+        return file.read()
 
 def launch_new_instance(ec2, config):
     # Launch a new instance
@@ -50,27 +69,24 @@ def stop_all_instances():
         stop_instance(ec2_client, instance.instance_id)
 
 def clearInputS3():
-    s3 = boto.connect_s3()
-    bucket = s3.get_bucket("image-rec-512")
-    bucketListResultSet = bucket.list(prefix="input/")
-    result = bucket.delete_keys([key.name for key in bucketListResultSet])
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket("image-rec-512")
+    bucket.objects.filter(Prefix="input/").delete()
 
 def clearOutputS3():
-    s3 = boto.connect_s3()
-    bucket = s3.get_bucket("image-rec-512")
-    bucketListResultSet = bucket.list(prefix="output/")
-    result = bucket.delete_keys([key.name for key in bucketListResultSet])
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket("image-rec-512")
+    bucket.objects.filter(Prefix="output/*").delete()
 
-def clearOutputS3():
-    s3 = boto.connect_s3()
-    bucket = s3.get_bucket("image-rec-512")
-    bucketListResultSet = bucket.list(prefix="output/")
-    result = bucket.delete_keys([key.name for key in bucketListResultSet])
+def clearQueue():
+    ec2_config = get_from_local('config')
+    sqs = boto3.client('sqs', region_name=ec2_config['region'])
+    sqs.purge_queue(QueueUrl = SQS_QUEUE_URL)
 
 #create_new_instances(10)
 #stop_all_instances()
-clearInputS3()
-clearOutputS3()
-
+# clearInputS3()
+# clearOutputS3()
+clearQueue()
 
 
