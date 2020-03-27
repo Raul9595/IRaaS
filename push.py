@@ -21,7 +21,7 @@ def push_output():
     items_found = []
 
     for item in lst:
-        with open('output.txt') as f:
+        with open('/home/ubuntu/darknet/output.txt') as f:
             for line in f:
                 if re.search("{0}".format(item+":"), line):
                     print(line)
@@ -32,7 +32,7 @@ def push_output():
     if len(items_found) == 0:
         items_found.append("No object detected")
 
-    f = open("output_processed.txt", "w")
+    f = open("/home/ubuntu/darknet/output_processed.txt", "w")
     f.write(json.dumps(mylist))
     f.close()
 
