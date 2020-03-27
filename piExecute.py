@@ -80,7 +80,7 @@ def push_output(input_video):
                     items_found.add(items_found)
 
     if len(items_found) == 0:
-        items_found.add("No object found")
+        items_found.add("No object detected")
 
     items_list = list(items_found)
 
