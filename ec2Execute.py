@@ -122,7 +122,7 @@ def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
 
     input_video = ast.literal_eval(sqs_message['Body']).get(
         'Records')[0].get('s3').get('object').get('key').split('/')[1]
-    output_file_name = input_video
+    output_file_name = 'output/' + input_video
 
     if file_exists_in_bucket(output_file_name):
         print('Skipping processing of video as output file with this name already exists')
@@ -156,6 +156,7 @@ def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
         add_message_to_sqs_queue(ec2_config, sqs_message)
         return
     else:
+        print('Stop instance with id {}'.format(instance_id))
         stop_instance(ec2_client, instance_id)
 
     ssh.close()
