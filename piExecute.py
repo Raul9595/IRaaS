@@ -10,8 +10,8 @@ import time
 BUCKET_NAME = "image-rec-512"
 CONFIG_S3_FILE_KEY = "config/config.json"
 CONFIG_LOCAL_FILE_KEY = "./config/config.json"
-COMMANDS_S3_FILE_KEY = "config/commands.txt"
-COMMANDS_LOCAL_FILE_KEY = "config/commands.txt"
+COMMANDS_S3_FILE_KEY = "config/commandPi.txt"
+COMMANDS_LOCAL_FILE_KEY = "config/commandPi.txt"
 BUCKET_INPUT_DIR = "input"
 BUCKET_OUTPUT_DIR = "output"
 SQS_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/103147106654/ImageRec"
@@ -66,18 +66,21 @@ def process_video(message):
     commands = get_from_local('commands')
     commands = commands.replace("inputFile", input_video)
     commands = commands.replace("outputFile", input_video + "_output.txt")
-    commands = commands.replace("exType", "pi")
     print('\nCommands ')
     print(commands)
 
     try:
-        proc = subprocess.Popen(commands, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        proc = subprocess.Popen(commands, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print('Complete')
         res = proc.communicate()
 
         if res[1] is not None:
             print('Adding message back to queue as res[1] is not None', res[1])
             add_message(message)
-        connect_to_instance('i-01b3d9f2d287a0a1c', 0)
+            return
+        else:
+            connect_to_instance('i-01b3d9f2d287a0a1c', 0)
+            return
 
     except subprocess.CalledProcessError as e:
         print('Adding message back to queue due to process error', e)
@@ -117,9 +120,7 @@ def get_from_s3(file):
 def main():
     sqs = boto3.client('sqs')
     try:
-        os.nice(19)
         while True:
-            time.sleep(3)
             message = get_message(sqs)
             if message and ast.literal_eval(message['Body']).get('Records') is not None and \
                     ast.literal_eval(message['Body']).get('Records')[0].get('eventSource') == 'aws:s3':

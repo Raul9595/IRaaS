@@ -10,7 +10,7 @@ def uploadDirectory(path, s3, bucketname):
                                               ExtraArgs={"ACL": "public-read",
                                                          "ContentType": "video/h264"})
             print('{0} is inserted into the database'.format(file))
-            subprocess.call(['rm', file])
+            subprocess.call(['rm', '/home/pi/iraas/data/' + file])
 
 
 def main():
