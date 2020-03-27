@@ -5,7 +5,7 @@ import os.path
 import sys
 import paramiko
 import json
-import time
+import re
 
 BUCKET_NAME = "image-rec-512"
 CONFIG_S3_FILE_KEY = "config/config.json"
@@ -59,6 +59,34 @@ def connect_to_instance(instance_id, val):
     ssh.close()
 
 
+def push_output(input_video):
+    s3 = boto3.client('s3')
+    lst = ["zebra", "wine glass", "vase", "umbrella", "tv", "truck", "train", "traffic light", "toothbrush", "toilet",
+           "toaster", "tie", "tennis racket", "teddy bear", "surfboard", "suitcase", "stop sign", "sports ball",
+           "spoon", "snowboard", "skis", "skateboard", "sink", "sheep", "scissors", "sandwich", "remote",
+           "refrigerator", "potted plant", "pizza", "person", "parking meter", "oven", "orange", "mouse", "motorcycle",
+           "microwave", "laptop", "knife", "kite", "keyboard", "hot dog", "horse", "handbag", "hair drier", "giraffe",
+           "frisbee", "fork", "fire hydrant", "elephant", "donut", "dog", "dining table", "cup", "cow", "couch",
+           "clock", "chair", "cell phone", "cat", "carrot", "car", "cake", "bus", "broccoli", "bowl", "bottle", "book",
+           "boat", "bird", "bicycle", "bench", "bed", "bear", "baseball glove", "baseball bat", "banana", "backpack",
+           "apple", "airplane"]
+
+    items_found = set()
+
+    for item in lst:
+        with open('output.txt') as f:
+            for line in f:
+                if re.search("\b{0}\b".format(item), line):
+                    items_found.add(items_found)
+
+    if len(items_found) == 0:
+        items_found.add("No object found")
+
+    items_list = list(items_found)
+
+    s3.put_object(Bucket=BUCKET_NAME, Key=input_video, Body=json.dumps(items_list))
+
+
 def process_video(message):
     connect_to_instance('i-01b3d9f2d287a0a1c', 1)
     input_video = ast.literal_eval(message['Body']).get('Records')[0].get('s3').get('object').get('key').split('/')[1]
@@ -72,6 +100,8 @@ def process_video(message):
     try:
         proc = subprocess.Popen(commands, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         proc.wait()
+
+        push_output(input_video)
 
         connect_to_instance('i-01b3d9f2d287a0a1c', 0)
         return
