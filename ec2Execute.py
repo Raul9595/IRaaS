@@ -8,6 +8,7 @@ import ast
 import os.path
 import time
 import sys
+import re
 
 BUCKET_NAME = "image-rec-512"
 CONFIG_S3_FILE_KEY = "config/config.json"
@@ -80,9 +81,8 @@ def add_message_to_sqs_queue(ec2_config, message):
 def file_exists_in_bucket(file_name):
     s3 = boto3.resource('s3')
     s3BucketName = 'image-rec-512'
-    for my_bucket_object in s3.Bucket(s3BucketName).objects.filter(Prefix='output/'):
-        if file_name in my_bucket_object.key:
-            return True
+    for my_bucket_object in s3.Bucket(s3BucketName).objects.filter(Prefix=file_name):
+        return True
     return False
 
 
@@ -116,6 +116,32 @@ def ssh_connect_with_retry(ssh, ip_address, retries):
         print('Retrying SSH connection to {}'.format(ip_address))
         ssh_connect_with_retry(ssh, ip_address, retries)
 
+def push_output(input_video):
+    s3 = boto3.client('s3')
+    lst = ["zebra", "wine glass", "vase", "umbrella", "tv", "truck", "train", "traffic light", "toothbrush", "toilet",
+           "toaster", "tie", "tennis racket", "teddy bear", "surfboard", "suitcase", "stop sign", "sports ball",
+           "spoon", "snowboard", "skis", "skateboard", "sink", "sheep", "scissors", "sandwich", "remote",
+           "refrigerator", "potted plant", "pizza", "person", "parking meter", "oven", "orange", "mouse", "motorcycle",
+           "microwave", "laptop", "knife", "kite", "keyboard", "hot dog", "horse", "handbag", "hair drier", "giraffe",
+           "frisbee", "fork", "fire hydrant", "elephant", "donut", "dog", "dining table", "cup", "cow", "couch",
+           "clock", "chair", "cell phone", "cat", "carrot", "car", "cake", "bus", "broccoli", "bowl", "bottle", "book",
+           "boat", "bird", "bicycle", "bench", "bed", "bear", "baseball glove", "baseball bat", "banana", "backpack",
+           "apple", "airplane"]
+
+    items_found = set()
+
+    for item in lst:
+        with open('/home/ubuntu/darknet/output.txt') as f:
+            for line in f:
+                if re.search("\b{0}\b".format(item), line):
+                    items_found.add(items_found)
+
+    if len(items_found) == 0:
+        items_found.add("No object found")
+
+    items_list = list(items_found)
+
+    s3.put_object(Bucket=BUCKET_NAME, Key=input_video, Body=json.dumps(items_list))
 
 def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
     receipt_handle = sqs_message.get('ReceiptHandle')
@@ -123,7 +149,7 @@ def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
 
     input_video = ast.literal_eval(sqs_message['Body']).get(
         'Records')[0].get('s3').get('object').get('key').split('/')[1]
-    output_file_name = input_video + "_output.txt"
+    output_file_name = input_video
 
     if file_exists_in_bucket(output_file_name):
         print('Skipping processing of video as output file with this name already exists')
@@ -144,13 +170,12 @@ def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
     commands = get_from_local('commands')
 
     commands = commands.replace("inputFile", input_video)
-    commands = commands.replace("outputFile", output_file_name)
-    commands = commands.replace("exType", "ec2")
     print('\nCommannds ', commands)
 
     stdin, stdout, stderr = ssh.exec_command(commands)
     print('stdout:', stdout.read())
     print('stderr:', stderr.read())
+    push_output(input_video)
 
     if not file_exists_in_bucket(output_file_name):
         print('Adding message back to SQS as processing failed for video {}'.format(
