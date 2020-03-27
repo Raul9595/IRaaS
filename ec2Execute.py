@@ -56,11 +56,11 @@ def start_instances(ec2_client, ec2_config, sqs_messages):
         if i == len(sqs_messages):
             break
 
-    for j in range(len(sqs_messages)):
-        if i != 0:
-            thread[j].join()
-            print('Stopping instance')
-            stop_instance(ec2_client, instance_thread_link[j])
+    # for j in range(len(sqs_messages)):
+    #     if i != 0:
+    #         thread[j].join()
+    #         print('Stopping instance')
+    #         stop_instance(ec2_client, instance_thread_link[j])
 
 
 def delete_messages_from_sqs_queue(ec2_config, message_receipt_handle):
@@ -157,6 +157,8 @@ def thread_work(ec2_client, ec2_config, tid, instance_id, sqs_message):
             input_video))
         add_message_to_sqs_queue(ec2_config, sqs_message)
         return
+    else:
+        stop_instance(ec2_client, instance_id)
 
     ssh.close()
 
