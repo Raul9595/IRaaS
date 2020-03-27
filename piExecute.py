@@ -71,18 +71,12 @@ def process_video(message):
 
     try:
         proc = subprocess.Popen(commands, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        res = proc.communicate()
+        proc.wait()
 
-        if res[1] is not None:
-            print('Adding message back to queue as res[1] is not None', res[1])
-            add_message(message)
-            return
-        else:
-            connect_to_instance('i-01b3d9f2d287a0a1c', 0)
-            return
+        connect_to_instance('i-01b3d9f2d287a0a1c', 0)
+        return
 
-    except subprocess.CalledProcessError as e:
-        print('Adding message back to queue due to process error', e)
+    except:
         add_message(message)
         connect_to_instance('i-01b3d9f2d287a0a1c', 0)
 
