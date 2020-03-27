@@ -1,1 +1,2 @@
-./runPi.sh inputFile outputFile
+chmod +x runPi.sh;
+./runPi.sh inputFile outputFile;

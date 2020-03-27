@@ -70,8 +70,7 @@ def process_video(message):
     print(commands)
 
     try:
-        proc = subprocess.Popen(commands, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print('Complete')
+        proc = subprocess.Popen(commands, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         res = proc.communicate()
 
         if res[1] is not None:
