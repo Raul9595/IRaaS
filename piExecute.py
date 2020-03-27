@@ -71,20 +71,20 @@ def push_output(input_video):
            "boat", "bird", "bicycle", "bench", "bed", "bear", "baseball glove", "baseball bat", "banana", "backpack",
            "apple", "airplane"]
 
-    items_found = set()
+    items_found = []
 
     for item in lst:
-        with open('/home/pi/darknet/output.txt') as f:
+        with open('output.txt') as f:
             for line in f:
-                if re.search("\b{0}\b".format(item), line):
-                    items_found.add(items_found)
+                if re.search("{0}".format(item + ":"), line):
+                    items_found.append(item)
+
+    mylist = list(set(items_found))
 
     if len(items_found) == 0:
-        items_found.add("No object detected")
+        items_found.append("No object detected")
 
-    items_list = list(items_found)
-
-    s3.put_object(Bucket=BUCKET_NAME, Key=input_video, Body=json.dumps(items_list))
+    s3.put_object(Bucket=BUCKET_NAME, Key="output/" + input_video, Body=json.dumps(mylist))
 
 
 def process_video(message):
