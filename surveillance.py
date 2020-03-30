@@ -26,11 +26,8 @@ def main(maxVid):
     max = maxVid
 
     while flag < max:
-        time.sleep(0.5)
         i = GPIO.input(sensor)
-        if i == 0:
-            print("No intruders")
-        elif i == 1:
+        if i == 1:
             print("Intruder detected")
             flag += 1
             subprocess.call(['raspivid', '-o', '../iraas/data/video' + str(flag) + '.h264'])
