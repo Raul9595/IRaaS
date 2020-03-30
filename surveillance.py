@@ -30,5 +30,5 @@ def main(maxVid):
         if i == 1:
             print("Intruder detected")
             flag += 1
-            subprocess.call(['raspivid', '-o', '../iraas/data/video' + str(flag) + '.h264', '-t', '5000', '-w', '640', '-h', '480', '-fps', '20'])
+            subprocess.call(['raspivid', '-o', '../iraas/data/video' + str(flag) + '.h264', '-t', '5000', '-w', '1280', '-h', '960', '-fps', '20'])
             storeS3.main()
