@@ -74,7 +74,7 @@ def push_output(input_video):
     items_found = []
 
     for item in lst:
-        with open('output.txt') as f:
+        with open('/home/pi/darknet/output.txt') as f:
             for line in f:
                 if re.search("{0}".format(item + ":"), line):
                     items_found.append(item)
@@ -100,13 +100,14 @@ def process_video(message):
     try:
         proc = subprocess.Popen(commands, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         proc.wait()
-
+        print('Process completed')
         push_output(input_video)
-
+        
         connect_to_instance('i-01b3d9f2d287a0a1c', 0)
         return
 
-    except:
+    except Exception as e:
+        print(e)
         add_message(message)
         connect_to_instance('i-01b3d9f2d287a0a1c', 0)
 
@@ -151,4 +152,4 @@ def main():
                 process_video(message)
 
     except KeyboardInterrupt:
-        connect_to_instance('i-01b3d9f2d287a0a1c', 0)
+       connect_to_instance('i-01b3d9f2d287a0a1c', 0)
