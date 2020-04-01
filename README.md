@@ -1,18 +1,18 @@
-## Setup instructions
+## Image Recognition as a Service
 
-Install packages
-
+Group Members
 ```
-pip install boto3
-pip install awscli --upgrade --user
-pip install paramiko
+Manikanta Vankayala (1218816326) 
+Rahul Santhosh Kumar Varma (1218475349)
+Vivek Kumar Maskara (1218403147)
 ```
 
-Default region: `us-east-1`
+Default region for all services : `us-east-1`
 
-Configure aws credentials
+S3 Bucket Name - `image-rec-512`
 
-Run: 
-```
-aws configure
-```
+SQS Queue Name - `ImageRec`
+
+AWSAccessKeyId - `AKIAIYBEVLVW6M6NYXSA`
+
+AWSSecretKey - `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`
