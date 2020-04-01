@@ -13,6 +13,6 @@ S3 Bucket Name - `image-rec-512`
 
 SQS Queue Name - `ImageRec`
 
-AWSAccessKeyId - `AKIAIYBEVLVW6M6NYXSA`
+AWS Access Key Id - `AKIAIYBEVLVW6M6NYXSA`
 
-AWSSecretKey - `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`
+AWS Secret Key - `0xv+pH3y1U9YthXSlL/NGOkt9tQWyIvCpEh/mKna`
