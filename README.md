@@ -2,9 +2,9 @@
 
 Group Members
 ```
-Manikanta Vankayala (1218816326) 
 Rahul Santhosh Kumar Varma (1218475349)
 Vivek Kumar Maskara (1218403147)
+Manikanta Vankayala (1218816326)
 ```
 
 Default region for all services : `us-east-1`
